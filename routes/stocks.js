@@ -13,21 +13,25 @@ router.get('/', async function (req, res, next) {
 	});
 });
 router.get('/agg', async function (req, res, next) {
-	const transcationData = Transcation.aggregate([
+	Transcation.aggregate([
 		{
 			$group: {
-				_id: [
-					{ stockName: '$stockName' },
-					{ transcation_type: '$transcation_type' },
-				],
-				total: {
+				_id: {
+					stockName: '$stockName',
+					transcation_type: '$transcation_type',
+				},
+				quantity: {
 					$sum: '$quantity',
+				},
+				totalAmount: {
+					$sum: '$price',
 				},
 				count: {
 					$sum: 1,
 				},
 			},
 		},
+		// $group: { _id: '$transcationType' },
 	]).then((data) => {
 		res.status(200).json({
 			success: true,
@@ -36,24 +40,29 @@ router.get('/agg', async function (req, res, next) {
 		console.log(data);
 	});
 });
+
 router.post('/new', async function (req, res, next) {
-	console.log(req.body);
 	const transcation = await Transcation({
 		stockName: req.body.stockName,
 		quantity: req.body.quantity,
 		price: req.body.price,
 		transcation_type: req.body.transcation_type,
+		total_price: req.body.price * req.body.quantity,
 	});
-	console.log(transcation);
 	await transcation
 		.save()
 		.then((res) => {
-			console.log(res);
+			res.status(200).json({
+				success: true,
+				data: 'successfully placed',
+			});
 		})
 		.catch((err) => {
 			console.log(err);
 		});
 });
+// });
+
 //getstocks
 router.get('/getstocks', async (req, res, next) => {
 	const stocks = await Stocks.find({}).then((data) => {
